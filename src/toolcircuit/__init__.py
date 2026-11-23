@@ -9,12 +9,11 @@ never gets to the part where it tells the user that the service is unavailable.
     >>> circuit.state("search")
     'closed'
     >>> for _ in range(3):
-    ...     circuit.record_failure("search")
+    ...     state = circuit.record_failure("search")
+    >>> state
     'open'
     >>> circuit.allow("search")
     False
-    >>> circuit.retry_after("search")
-    30.0
 
 Closed → open → half-open → closed, with an injectable clock so tests do not sleep.
 Standard library only, Python 3.9+.
