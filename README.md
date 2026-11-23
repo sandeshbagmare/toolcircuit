@@ -1,31 +1,23 @@
-# toolcircuit
+<p align="center">
+  <img src="https://raw.githubusercontent.com/sandeshbagmare/toolcircuit/main/assets/banner.svg" width="100%" alt="toolcircuit: stop retrying a tool that is down">
+</p>
 
-A per-tool circuit breaker, so a dead API stops eating an agent's budget and context.
+<p align="center">
+  <a href="https://pypi.org/project/toolcircuit/"><img alt="PyPI version" src="https://img.shields.io/pypi/v/toolcircuit.svg"></a>
+  <a href="https://pypi.org/project/toolcircuit/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/toolcircuit.svg"></a>
+  <a href="https://pypi.org/project/toolcircuit/"><img alt="Downloads" src="https://img.shields.io/pypi/dm/toolcircuit.svg"></a>
+  <a href="https://github.com/sandeshbagmare/toolcircuit/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/sandeshbagmare/toolcircuit/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/sandeshbagmare/toolcircuit/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/pypi/l/toolcircuit.svg"></a>
+  <a href="https://sandeshbagmare.github.io/toolcircuit/"><img alt="docs" src="https://img.shields.io/badge/docs-online-2ea44f.svg"></a>
+  <a href="https://pypi.org/project/toolcircuit/"><img alt="zero dependencies" src="https://img.shields.io/badge/dependencies-0-2ea44f.svg"></a>
+</p>
 
-[![PyPI](https://img.shields.io/pypi/v/toolcircuit.svg)](https://pypi.org/project/toolcircuit/)
-[![Python](https://img.shields.io/pypi/pyversions/toolcircuit.svg)](https://pypi.org/project/toolcircuit/)
-[![tests](https://github.com/sandeshbagmare/toolcircuit/actions/workflows/ci.yml/badge.svg)](https://github.com/sandeshbagmare/toolcircuit/actions/workflows/ci.yml)
-[![license](https://img.shields.io/pypi/l/toolcircuit.svg)](https://github.com/sandeshbagmare/toolcircuit/blob/main/LICENSE)
+<h3 align="center">stop retrying a tool that is down</h3>
+<p align="center"><em>Standard library only. No runtime dependencies. Python 3.9+.</em></p>
 
-```python
->>> from toolcircuit import ToolCircuit
->>> circuit = ToolCircuit()
->>> circuit.state("search")
-'closed'
->>> for _ in range(3):
-...     state = circuit.record_failure("search")
->>> state
-'open'
->>> circuit.allow("search")
-False
->>> circuit.retry_after("search")
-30.0
-```
-
-Retry understands a blip. It does not understand an outage: when a tool is down, forty
-retries spend the run's tokens on forty copies of the same failure, and the agent never
-reaches the sentence where it tells the user the service is unavailable. A breaker turns
-"keep trying" into "stop, and say when to come back".
+<p align="center">
+  <img src="https://raw.githubusercontent.com/sandeshbagmare/toolcircuit/main/assets/how.svg" width="720" alt="how toolcircuit fits in">
+</p>
 
 ## Install
 

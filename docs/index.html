@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>toolcircuit — stop retrying a tool that is down</title>
+<meta name="description" content="Stop retrying a tool that is down. Standard library only, Python 3.9+.">
+<meta property="og:title" content="toolcircuit — stop retrying a tool that is down">
+<meta property="og:description" content="Stop retrying a tool that is down. Standard library only, Python 3.9+.">
+<meta property="og:image" content="https://raw.githubusercontent.com/sandeshbagmare/toolcircuit/main/assets/banner.svg">
+<meta property="og:type" content="website">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<style>
+  :root {
+    --bg: hsl(12 45% 8%);
+    --ink: #e6edf6;
+    --muted: #9fb0c6;
+    --line: hsl(12 35% 26%);
+    --accent: hsl(42 88% 66%);
+    --soft: hsl(42 92% 80%);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  a { color: var(--soft); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  header {
+    position: sticky; top: 0; z-index: 9; display: flex; gap: 18px; align-items: center;
+    padding: 14px 24px; background: rgba(8, 12, 20, 0.86); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  header .mark { width: 26px; height: 26px; }
+  header strong { font-family: ui-monospace, monospace; letter-spacing: 0.02em; }
+  header nav { margin-left: auto; display: flex; gap: 16px; font-size: 14px; }
+  .hero { max-width: 1180px; margin: 0 auto; padding: 18px 20px 0; }
+  .hero img { width: 100%; border-radius: 14px; box-shadow: 0 18px 50px rgba(0,0,0,0.45); }
+  main { max-width: 900px; margin: 0 auto; padding: 28px 20px 80px; }
+  h1, h2, h3, h4 { line-height: 1.25; }
+  h2 { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em;
+    background: rgba(148, 163, 184, 0.15); padding: 1px 5px; border-radius: 5px;
+  }
+  pre.code {
+    position: relative; background: #070b12; border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px; overflow-x: auto;
+  }
+  pre.code code { background: none; padding: 0; font-size: 14px; }
+  pre .lang {
+    position: absolute; top: 8px; right: 12px; font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 15px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; }
+  img { max-width: 100%; }
+  blockquote {
+    margin: 18px 0; padding: 4px 16px; border-left: 3px solid var(--accent);
+    color: var(--muted);
+  }
+  footer {
+    border-top: 1px solid var(--line); padding: 26px 20px; color: var(--muted);
+    font-size: 14px; text-align: center;
+  }
+</style>
+</head>
+<body>
+<header>
+  <img class="mark" src="../assets/logo.svg" alt="">
+  <strong>toolcircuit</strong>
+  <nav>
+    <a href="https://pypi.org/project/toolcircuit/">PyPI</a>
+    <a href="https://github.com/sandeshbagmare/toolcircuit">GitHub</a>
+    <a href="https://github.com/sandeshbagmare/toolcircuit/issues">Issues</a>
+    <a href="https://github.com/sandeshbagmare/toolcircuit/blob/main/CHANGELOG.md">Changelog</a>
+  </nav>
+</header>
+<div class="hero"><img src="../assets/banner.svg" alt="toolcircuit"></div>
+<main>
+<p align="center">
+  <img src="../assets/how.svg" width="720" alt="how toolcircuit fits in">
+</p>
+<h2>Install</h2>
+<pre class="code"><span class="lang">console</span><code>pip install toolcircuit</code></pre>
+<h2>Use</h2>
+<pre class="code"><span class="lang">python</span><code>from toolcircuit import CircuitOpen, Policy, ToolCircuit
+
+circuit = ToolCircuit(
+    default=Policy(failure_threshold=3, cooldown=30),
+    policies={&quot;search&quot;: Policy(failure_threshold=2, cooldown=120)},
+)
+
+def call_tool(name, tool, **arguments):
+    try:
+        return circuit.call(name, tool, **arguments)
+    except CircuitOpen as error:
+        return {&quot;error&quot;: str(error), &quot;retry_after&quot;: error.retry_after}
+    except Exception as error:
+        return {&quot;error&quot;: f&quot;{name} failed: {error}&quot;}</code></pre>
+<p>Reading it back:</p>
+<pre class="code"><span class="lang">python</span><code>circuit.state(&quot;search&quot;)        # &#x27;closed&#x27; | &#x27;open&#x27; | &#x27;half-open&#x27;
+circuit.allow(&quot;search&quot;)        # False while open
+circuit.failures(&quot;search&quot;)     # consecutive failures
+circuit.retry_after(&quot;search&quot;)  # seconds until the next trial
+circuit.report()               # {&quot;search&quot;: {&quot;state&quot;: &quot;open&quot;, &quot;failures&quot;: 3, …}}
+circuit.reset()                # new run</code></pre>
+<h2>How the states work</h2>
+<table><thead><tr>
+<th>state</th>
+<th>meaning</th>
+<th>calls allowed</th>
+</tr></thead><tbody>
+<tr><td><code>closed</code></td><td>healthy, failures below the threshold</td><td>yes</td></tr>
+<tr><td><code>open</code></td><td>threshold reached</td><td>no, <code>CircuitOpen</code> with a wait time</td></tr>
+<tr><td><code>half-open</code></td><td>cooldown has passed</td><td>one trial</td></tr>
+</tbody></table>
+<p>A success anywhere closes the circuit and resets the failure count. A failure in <code>half-open</code> reopens it for another full cooldown — the service had its chance.</p>
+<p>The clock is injectable, which is how the tests avoid sleeping:</p>
+<pre class="code"><span class="lang">python</span><code>now = 0.0
+circuit = ToolCircuit(clock=lambda: now)</code></pre>
+<h2>Rules</h2>
+<ul>
+<li>The breaker is per tool name, per process. A shared breaker across workers needs a</li>
+</ul>
+<p>  shared store, which is a different library on purpose: a breaker that needs a network   round trip is a breaker that breaks the run when that network is down.</p>
+<ul>
+<li><code>call</code> re-raises the original exception after counting it, so your own error handling</li>
+</ul>
+<p>  keeps working; only the refusal case is a new exception type.</p>
+<ul>
+<li>Count only failures that say something about the <em>service</em>. A bad argument is not an</li>
+</ul>
+<p>  outage, so catch that before calling <code>call</code>, not after.</p>
+<ul>
+<li><code>cooldown</code> is a floor, not a schedule: nothing wakes up to close the circuit, it closes</li>
+</ul>
+<p>  on the first success after a cooldown, or on <code>reset()</code>.</p>
+<h2>Limits</h2>
+<ul>
+<li>No exponential growth of the cooldown between reopens, and no jitter. If you need</li>
+</ul>
+<p>  either, wrap <code>Policy</code> and replace the breaker object.</p>
+<ul>
+<li>No bulkheads or concurrency limits: this decides <em>whether</em> to call, not <em>how many</em> at</li>
+</ul>
+<p>  once.</p>
+<ul>
+<li>State dies with the process. That is the right default for a run, and the wrong one for</li>
+</ul>
+<p>  a long-lived service — persist <code>report()</code> if you need that.</p>
+<h2>Development</h2>
+<pre class="code"><span class="lang">console</span><code>python -m venv .venv
+.venv/bin/pip install -e &quot;.[test]&quot;
+.venv/bin/pytest</code></pre>
+<h2>License</h2>
+<p>MIT.</p>
+</main>
+<footer>
+  toolcircuit · MIT · standard library only ·
+  <a href="https://github.com/sandeshbagmare/toolcircuit">source</a> ·
+  <a href="https://pypi.org/project/toolcircuit/">pip install toolcircuit</a>
+</footer>
+</body>
+</html>
